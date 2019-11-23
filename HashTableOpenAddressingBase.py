@@ -70,36 +70,36 @@ class HashTableOpenAddressingBase(ABC):
 
         # Start at the original hash value and probe until we find a spot where our key
         # is or hit a null element in which case our element does not exist
-        while True:
-            i = offset
-            j = -1
-            x = 1
+        i = offset
+        j = -1
+        x = 1
 
+        while True:
             # Ignore deleted cells, but record where the first index
             # of  a deleted cell is found to perform the lazy relocation later.
             if self._keys[i] == self.TOMBSTONE:
                 if j == -1: j = i
-                # We hit a non-null key, perhaps it's the one we're looking for.
-                elif self._keys[i] is not None: 
-                    # The key we want is in the hash-table!
-                    if self._keys[i] == key:
-                        # If j != -1, this means we previously encountered a deleted cell.
-                        # We can perform an optimization by swapping the entries in cells
-                        # i and j so that the next time we search for this key it will be 
-                        # found faster. This is called lazy deletion/relocation
-                        if j != -1:
-                            # Swap the key-value pairs of positions i and j.
-                            self._keys[j] = self._keys[i]
-                            self._values[j] = self._values[i]    
-                            self._keys[i] = self.TOMBSTONE
-                            self._values[i] = None
-                        return True
-                else:
-                    # Key was not found in the hash-table 
-                    return False
+            # We hit a non-null key, perhaps it's the one we're looking for.
+            elif self._keys[i] is not None: 
+                # The key we want is in the hash-table!
+                if self._keys[i] == key:
+                    # If j != -1, this means we previously encountered a deleted cell.
+                    # We can perform an optimization by swapping the entries in cells
+                    # i and j so that the next time we search for this key it will be 
+                    # found faster. This is called lazy deletion/relocation
+                    if j != -1:
+                        # Swap the key-value pairs of positions i and j.
+                        self._keys[j] = self._keys[i]
+                        self._values[j] = self._values[i]    
+                        self._keys[i] = self.TOMBSTONE
+                        self._values[i] = None
+                    return True
+            else:
+                # Key was not found in the hash-table 
+                return False
 
-            x += 1  
             i = self.normalise_index(offset + self.probe(x))
+            x += 1  
 
 
 
@@ -131,6 +131,13 @@ class HashTableOpenAddressingBase(ABC):
         key_table_temp = self._keys
         self._keys = old_key_table
         old_key_table = key_table_temp
+        key_table_temp = None
+
+        # Perform value table pointer swap
+        value_table_temp = self._values
+        self._values = old_value_table
+        old_value_table = value_table_temp
+        value_table_temp = None
 
         # Reset the key count and buckets used since we are about to 
         # re-insert all the keys into the hash-table
@@ -138,7 +145,7 @@ class HashTableOpenAddressingBase(ABC):
 
         for i in range(len(old_key_table)):
             if old_key_table[i] is not None and old_key_table[i] != self.TOMBSTONE:
-                self.insert(old_key_table[i], old_value_table[i])
+                self[old_key_table[i]] = old_value_table[i]
             old_key_table[i] = None
             old_value_table[i] = None
 
@@ -161,11 +168,11 @@ class HashTableOpenAddressingBase(ABC):
         self.setup_probing(key)
         offset = self.normalise_index(hash(key))
 
-        while True:
-            i = offset
-            j = -1
-            x = 1
+        i = offset
+        j = -1
+        x = 1
 
+        while True:
             # The current slot was previously deleted
             if self._keys[i] == self.TOMBSTONE:
                 if j == -1: j = i
@@ -204,8 +211,8 @@ class HashTableOpenAddressingBase(ABC):
                 self.modification_count += 1
                 return None
 
-            x += 1
             i = self.normalise_index(offset + self.probe(x))
+            x += 1
 
 
     def __getitem__(self, key):
@@ -217,11 +224,11 @@ class HashTableOpenAddressingBase(ABC):
 
         # Start at the original hash value and probe until we find a spot where our key 
         # is or we hit a null element in which case our element does not exist.
-        while True:
-            i = offset
-            j = -1
-            x = 1
+        i = offset
+        j = -1
+        x = 1
 
+        while True:
             # Ignore deleted cells, but record where the first index
             # of a deleted cell is found to perform lazy relocaltion later
             if self._keys == self.TOMBSTONE:
@@ -240,45 +247,50 @@ class HashTableOpenAddressingBase(ABC):
                         self._values[j] = self.values[i]
                         self._keys[i] = self.TOMBSTONE
                         self._values[i] = None
-                        return self._values[i]
+                        return self._values[j]
                     else:
                         return self._values[i]
             # Element was not found in the hash-table
             else:
-                return self._values[i]
+                return None
+
+            i = self.normalise_index(offset + self.probe(x))
+            x += 1
+        
 
     # Removes a key from the map and returns the value.
     # Note: returns null if the value is null AND also returns
     # null if the key does not exists.
     def remove(self, key):
-        if key is None: raise ValueError
+        if key is None: raise ValueError("Null key")
         
         self.setup_probing(key)
         offset = self.normalise_index(hash(key))
 
         # Starting at the original hash probe until we find a spot where our key is
         # or we hit a null element in which case our element does not exist.
+
+        i = offset
+        x = 1
+
         while True:
-            i = offset
-            x = 1
-            
             # Ignore deleted cells
-            if self._keys[i] == self.TOMBSTONE: continue
+            # if self._keys[i] == self.TOMBSTONE: continue
             
             # Key was not found in hash-table
             if self._keys[i] is None: return None
         
             # The key we want to remove is in the hash-table!
             if self._keys[i] == key:
-                self.key_count += 1
+                self.key_count -= 1
                 self.modification_count += 1
                 old_value = self._values[i]
                 self._keys[i] = self.TOMBSTONE
                 self._values[i] = None
                 return old_value
 
+            i = self.normalise_index(offset + self.probe(x))
             x += 1
-            self.normalise_index(offset + self.probe(x))
 
     def __str__(self):
         result = "{"
@@ -288,6 +300,21 @@ class HashTableOpenAddressingBase(ABC):
         result += "}"
         return result
 
+    def __iter__(self):
+        # self.MODIFICATION_COUNT = self.modification_count
+        self.index = 0
+        self.keysLeft = self.key_count
+        return self
+
+    def __next__(self):
+        if self.keysLeft == 0:
+            raise StopIteration
+        while self._keys[self.index] is None or self._keys[self.index] == self.TOMBSTONE:
+            self.index += 1
+        self.keysLeft -= 1
+        data = self._keys[self.index]
+        self.index += 1
+        return data
 
 
 

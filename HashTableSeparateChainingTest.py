@@ -197,7 +197,7 @@ class HashTableSeparateChainingTest(unittest.TestCase):
             
             probability = random.random()
 
-            for i in range(self.MAX_SIZE):
+            for _ in range(self.MAX_SIZE):
                 index = random.randint(0, self.MAX_SIZE - 1)
                 l1 = self.map[index]
                 l2 = pymap.get(index) # returns None instead of KeyError
