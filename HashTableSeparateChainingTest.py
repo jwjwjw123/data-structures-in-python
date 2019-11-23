@@ -1,5 +1,6 @@
 import unittest
 import random
+from collections import deque
 from HashTableSeparateChaining import HashTableSeparateChaining
 
 class HashObject:
@@ -9,7 +10,7 @@ class HashObject:
 
     def __eq__(self, other):
         if not isinstance(other, HashObject):
-            return NotImplemented
+            raise NotImplementedError
         return self.hash == other.hash and self.data == other.data
 
     def __hash__(self):
@@ -46,6 +47,12 @@ class HashTableSeparateChainingTest(unittest.TestCase):
     def testUpdatingValue(self):
         self.map[1] = 1
         self.assertTrue(1 == self.map[1])
+
+        self.map[1] = 5
+        self.assertTrue(5 == self.map[1])
+
+        self.map[1] = -7
+        self.assertTrue(-7 == self.map[1])
 
     def testIterator(self):
         map2 = {}
@@ -178,6 +185,43 @@ class HashTableSeparateChainingTest(unittest.TestCase):
                 self.assertEqual(key in pymap, key in self.map)
                 self.assertEqual(len(pymap), len(self.map))
 
+    def testRandomIterator(self):
+        pymap = {}
+        for _ in range(self.LOOPS):
+            pymap.clear()
+            self.map.clear()
+            self.assertEqual(len(self.map), len(pymap))
+
+            sz = random.randint(1, self.MAX_SIZE)
+            self.map = HashTableSeparateChaining(sz)
+            
+            probability = random.random()
+
+            for i in range(self.MAX_SIZE):
+                index = random.randint(0, self.MAX_SIZE - 1)
+                l1 = self.map[index]
+                l2 = pymap.get(index) # returns None instead of KeyError
+
+                if l2 is None:
+                    l1 = deque([])
+                    l2 = deque([])
+                    self.map[index] = l1
+                    pymap[index] = l2
+
+                rand_val = random.randint(-self.MAX_SIZE, self.MAX_SIZE)
+
+                if random.random() < probability:
+                    if rand_val in l1: l1.remove(rand_val)
+                    if rand_val in l2: l2.remove(rand_val) 
+                else:
+                    l1.append(rand_val)
+                    l2.append(rand_val)
+
+                self.assertEqual(len(self.map), len(pymap))
+                self.assertEqual(l1, l2)
+            
+
+
 
 
 
@@ -199,23 +243,3 @@ class HashTableSeparateChainingTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-    # myMap = HashTableSeparateChaining()
-    # o1 = HashObject(88, 1)
-    # o2 = HashObject(88, 2)
-    # o3 = HashObject(88, 3)
-    # o4 = HashObject(88, 4)
-
-    # myMap[o1] = 112
-    # myMap[o2] = 113
-    # myMap[o3] = 114
-    # myMap[o4] = 115
-    
-
-
-    # myMap.remove(o2)
-    # myMap.remove(o3)
-    # myMap.remove(o1)
-    # myMap.remove(o4)
-    
-    # print(myMap[o4])

@@ -179,10 +179,3 @@ class HashTableSeparateChaining:
         result += "}"
         return result
     
-# import random
-
-# for _ in range(75000):
-#     myMap = HashTableSeparateChaining()
-#     for _ in range(750):
-#         randomVal = random.randint(-350, 350)
-#         myMap[randomVal] = 5
