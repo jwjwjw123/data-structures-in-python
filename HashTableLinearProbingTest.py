@@ -190,17 +190,17 @@ class HashTableLinearProbingTest(unittest.TestCase):
                 self.map[index] = l1
                 pymap[index] = l2
 
-            rand_val = random.randint(-self.MAX_SIZE, self.MAX_SIZE)
+                rand_val = random.randint(-self.MAX_SIZE, self.MAX_SIZE)
 
-            if random.random() < probability:
-                if rand_val in l1: l1.remove(rand_val)
-                if rand_val in l2: l2.remove(rand_val)
-            else:
-                l1.append(rand_val)
-                l2.append(rand_val)
+                if random.random() < probability:
+                    if rand_val in l1: l1.remove(rand_val)
+                    if rand_val in l2: l2.remove(rand_val)
+                else:
+                    l1.append(rand_val)
+                    l2.append(rand_val)
 
-            self.assertEqual(len(self.map), len(pymap))
-            self.assertEqual(l1, l2)
+                self.assertEqual(len(self.map), len(pymap))
+                self.assertEqual(l1, l2)
 
 
 
